@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  
+  <!-- Configuration spécifique iPhone Web App (PWA) -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="NutriScan">
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2921/2921822.png">
+  
+  <title>NutriScan - Suivi Macros & Photos</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      -webkit-tap-highlight-color: transparent;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .safe-top {
+      padding-top: max(1rem, env(safe-area-inset-top));
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen pb-24">
+
+  <!-- En-tête avec sélecteur de date -->
+  <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-20 px-4 pb-3 safe-top">
+    <div class="flex items-center justify-between max-w-md mx-auto">
+      <div class="flex items-center space-x-2">
+        <span class="text-2xl">🥗</span>
+        <h1 class="text-lg font-bold tracking-tight text-white">NutriScan</h1>
+      </div>
+      <div class="flex items-center space-x-1 bg-slate-800 rounded-lg p-1 border border-slate-700">
+        <button onclick="changeDate(-1)" class="px-2 py-1 text-slate-300 active:scale-95">◀</button>
+        <input type="date" id="datePicker" onchange="onDateChange(this.value)" class="bg-transparent text-sm font-medium text-center text-white focus:outline-none">
+        <button onclick="changeDate(1)" class="px-2 py-1 text-slate-300 active:scale-95">▶</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Conteneur Principal -->
+  <main class="max-w-md mx-auto p-4 space-y-6">
+
+    <!-- VUE 1 : TABLEAU DE BORD & REPAS -->
+    <div id="view-dashboard" class="space-y-6">
+      
+      <!-- Carte Bilan Journalier vs Objectifs -->
+      <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4">
+        <div class="flex justify-between items-baseline">
+          <h2 class="text-base font-semibold text-slate-300">Bilan du jour</h2>
+          <button onclick="switchTab('settings')" class="text-xs text-emerald-400 font-medium hover:underline">Ajuster les objectifs ⚙️</button>
+        </div>
+
+        <!-- Calories principales -->
+        <div class="bg-slate-950/60 rounded-xl p-4 border border-slate-800/80">
+          <div class="flex justify-between items-end mb-2">
+            <div>
+              <span class="text-xs uppercase tracking-wider text-slate-400">Calories</span>
+              <div class="text-3xl font-extrabold text-white"><span id="tot-cal">0</span> <span class="text-sm font-normal text-slate-400">/ <span id="goal-cal">2200</span> kcal</span></div>
+            </div>
+            <span id="rem-cal" class="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400">Reste : 2200 kcal</span>
+          </div>
+          <div class="w-full bg-slate-800 h-3 rounded-full overflow-hidden">
+            <div id="bar-cal" class="bg-emerald-500 h-full transition-all duration-300" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- Barres des 3 Macronutriments -->
+        <div class="grid grid-cols-3 gap-3">
+          <!-- Protéines -->
+          <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
+            <div class="text-xs text-blue-400 font-semibold mb-1">Protéines</div>
+            <div class="text-lg font-bold"><span id="tot-pro">0</span><span class="text-xs font-normal text-slate-400"> / <span id="goal-pro">150</span>g</span></div>
+            <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden mt-2">
+              <div id="bar-pro" class="bg-blue-500 h-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+          </div>
+          <!-- Glucides -->
+          <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
+            <div class="text-xs text-amber-400 font-semibold mb-1">Glucides</div>
+            <div class="text-lg font-bold"><span id="tot-carb">0</span><span class="text-xs font-normal text-slate-400"> / <span id="goal-carb">220</span>g</span></div>
+            <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden mt-2">
+              <div id="bar-carb" class="bg-amber-500 h-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+          </div>
+          <!-- Lipides -->
+          <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
+            <div class="text-xs text-rose-400 font-semibold mb-1">Lipides</div>
+            <div class="text-lg font-bold"><span id="tot-fat">0</span><span class="text-xs font-normal text-slate-400"> / <span id="goal-fat">75</span>g</span></div>
+            <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden mt-2">
+              <div id="bar-fat" class="bg-rose-500 h-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Zone d'ajout de repas (Photo ou Manuel) -->
+      <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4">
+        <h2 class="text-base font-semibold text-slate-300">Ajouter un repas</h2>
+
+        <!-- Bouton Caméra / Photo -->
+        <label for="photoInput" class="flex flex-col items-center justify-center w-full h-36 border-2 border-dashed border-emerald-500/50 rounded-xl cursor-pointer bg-slate-950/50 hover:bg-slate-950 transition active:scale-[0.99]">
+          <div id="photoPreviewContainer" class="hidden w-full h-full relative">
+            <img id="photoPreview" class="w-full h-full object-cover rounded-xl opacity-80" />
+            <div class="absolute inset-0 flex items-center justify-center bg-black/40 rounded-xl">
+              <span class="text-xs font-semibold bg-slate-900/90 px-3 py-1.5 rounded-full text-white">Changer la photo 📷</span>
+            </div>
+          </div>
+          <div id="photoPrompt" class="flex flex-col items-center justify-center pt-5 pb-6 text-center px-4">
+            <span class="text-3xl mb-2">📸</span>
+            <p class="text-sm font-semibold text-emerald-400">Prendre en photo mon assiette</p>
+            <p class="text-xs text-slate-400 mt-1">Analyse automatique des portions et macros</p>
+          </div>
+          <input id="photoInput" type="file" accept="image/*" class="hidden" onchange="handlePhotoUpload(event)" />
+        </label>
+
+        <!-- Précision optionnelle pour aider l'IA -->
+        <div class="space-y-2">
+          <input type="text" id="mealContext" placeholder="Précision facultative (ex: bœuf haché 150g, huile d'olive...)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
+          
+          <button id="analyzeBtn" onclick="analyzePhotoWithAI()" class="hidden w-full bg-emerald-600 hover:bg-emerald-500 active:scale-[0.99] text-white font-semibold py-3 rounded-xl shadow transition flex items-center justify-center space-x-2">
+            <span>✨ Analyser la photo avec l'IA</span>
+          </button>
+        </div>
+
+        <!-- Formulaire d'édition / vérification avant enregistrement -->
+        <div id="mealForm" class="pt-3 border-t border-slate-800 space-y-3">
+          <div class="text-xs font-medium text-slate-400 uppercase tracking-wider">Détails du repas (éditable)</div>
+          <input type="text" id="mealName" placeholder="Nom du repas (ex: Saumon grillé et riz)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-white">
+          
+          <div class="grid grid-cols-4 gap-2">
+            <div>
+              <label class="text-[11px] text-slate-400">Calories</label>
+              <input type="number" id="mealCal" placeholder="kcal" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-2 text-sm text-white">
+            </div>
+            <div>
+              <label class="text-[11px] text-blue-400">Prot. (g)</label>
+              <input type="number" id="mealPro" placeholder="g" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-2 text-sm text-white">
+            </div>
+            <div>
+              <label class="text-[11px] text-amber-400">Gluc. (g)</label>
+              <input type="number" id="mealCarb" placeholder="g" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-2 text-sm text-white">
+            </div>
+            <div>
+              <label class="text-[11px] text-rose-400">Lip. (g)</label>
+              <input type="number" id="mealFat" placeholder="g" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-2 text-sm text-white">
+            </div>
+          </div>
+
+          <textarea id="mealDetails" rows="2" placeholder="Détail des aliments estimés..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-300"></textarea>
+
+          <button onclick="saveMeal()" class="w-full bg-blue-600 hover:bg-blue-500 active:scale-[0.99] text-white font-semibold py-2.5 rounded-xl shadow transition">
+            ➕ Ajouter au bilan du jour
+          </button>
+        </div>
+      </section>
+
+      <!-- Liste des repas de la journée -->
+      <section class="space-y-3">
+        <h2 class="text-base font-semibold text-slate-300 px-1">Repas enregistrés</h2>
+        <div id="mealsList" class="space-y-3"></div>
+      </section>
+    </div>
+
+    <!-- VUE 2 : OBJECTIFS AJUSTABLES & CONFIGURATION -->
+    <div id="view-settings" class="hidden space-y-6">
+      <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-5">
+        <h2 class="text-base font-semibold text-white">🎯 Objectifs quotidiens ajustables</h2>
+        
+        <div class="space-y-4">
+          <div>
+            <div class="flex justify-between text-sm mb-1">
+              <span class="text-slate-300">Objectif Calories</span>
+              <span class="font-bold text-emerald-400"><span id="lbl-goal-cal">2200</span> kcal</span>
+            </div>
+            <input type="range" id="rng-cal" min="1200" max="4000" step="50" oninput="updateGoalPreview()" class="w-full accent-emerald-500">
+          </div>
+
+          <div>
+            <div class="flex justify-between text-sm mb-1">
+              <span class="text-blue-400">Protéines</span>
+              <span class="font-bold text-blue-400"><span id="lbl-goal-pro">150</span> g</span>
+            </div>
+            <input type="range" id="rng-pro" min="40" max="300" step="5" oninput="updateGoalPreview()" class="w-full accent-blue-500">
+          </div>
+
+          <div>
+            <div class="flex justify-between text-sm mb-1">
+              <span class="text-amber-400">Glucides</span>
+              <span class="font-bold text-amber-400"><span id="lbl-goal-carb">220</span> g</span>
+            </div>
+            <input type="range" id="rng-carb" min="20" max="500" step="5" oninput="updateGoalPreview()" class="w-full accent-amber-500">
+          </div>
+
+          <div>
+            <div class="flex justify-between text-sm mb-1">
+              <span class="text-rose-400">Lipides</span>
+              <span class="font-bold text-rose-400"><span id="lbl-goal-fat">75</span> g</span>
+            </div>
+            <input type="range" id="rng-fat" min="20" max="200" step="5" oninput="updateGoalPreview()" class="w-full accent-rose-500">
+          </div>
+        </div>
+
+        <button onclick="saveSettings()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 rounded-xl transition">
+          Enregistrer mes objectifs
+        </button>
+      </section>
+
+      <!-- Configuration Clé API Gemini pour l'analyse d'image -->
+      <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-3">
+        <h2 class="text-base font-semibold text-white">🔑 Clé API Gemini (Analyse Photo)</h2>
+        <p class="text-xs text-slate-400 leading-relaxed">
+          Pour analyser automatiquement vos photos de repas depuis votre iPhone, entrez votre clé API gratuite Google Gemini (Google AI Studio). Elle reste stockée uniquement sur votre téléphone.
+        </p>
+        <input type="password" id="apiKeyInput" placeholder="AIzaSy..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white">
+        <button onclick="saveSettings()" class="w-full bg-slate-800 hover:bg-slate-700 text-white text-sm font-semibold py-2.5 rounded-xl transition">
+          Sauvegarder la clé
+        </button>
+      </section>
+    </div>
+
+  </main>
+
+  <!-- Barre de navigation inférieure style iOS -->
+  <nav class="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur border-t border-slate-800 px-6 py-2 z-30">
+    <div class="max-w-md mx-auto flex justify-around items-center">
+      <button onclick="switchTab('dashboard')" id="tab-dashboard" class="flex flex-col items-center py-1 text-emerald-400">
+        <span class="text-xl">📊</span>
+        <span class="text-[11px] font-medium mt-0.5">Journal & Photo</span>
+      </button>
+      <button onclick="switchTab('settings')" id="tab-settings" class="flex flex-col items-center py-1 text-slate-400">
+        <span class="text-xl">🎯</span>
+        <span class="text-[11px] font-medium mt-0.5">Objectifs & API</span>
+      </button>
+    </div>
+  </nav>
+
+  <script>
+    // État global
+    let currentDate = new Date().toISOString().split('T')[0];
+    let currentPhotoBase64 = null;
+
+    let goals = JSON.parse(localStorage.getItem('nutri_goals')) || {
+      cal: 2200, pro: 150, carb: 220, fat: 75
+    };
+
+    // Initialisation
+    window.onload = () => {
+      document.getElementById('datePicker').value = currentDate;
+      document.getElementById('apiKeyInput').value = localStorage.getItem('nutri_api_key') || '';
+      initSettingsSliders();
+      renderDay();
+    };
+
+    function switchTab(tab) {
+      document.getElementById('view-dashboard').classList.toggle('hidden', tab !== 'dashboard');
+      document.getElementById('view-settings').classList.toggle('hidden', tab !== 'settings');
+      document.getElementById('tab-dashboard').className = `flex flex-col items-center py-1 ${tab === 'dashboard' ? 'text-emerald-400' : 'text-slate-400'}`;
+      document.getElementById('tab-settings').className = `flex flex-col items-center py-1 ${tab === 'settings' ? 'text-emerald-400' : 'text-slate-400'}`;
+    }
+
+    function changeDate(offset) {
+      const d = new Date(currentDate + 'T12:00:00');
+      d.setDate(d.getDate() + offset);
+      currentDate = d.toISOString().split('T')[0];
+      document.getElementById('datePicker').value = currentDate;
+      renderDay();
+    }
+
+    function onDateChange(val) {
+      if (val) {
+        currentDate = val;
+        renderDay();
+      }
+    }
+
+    // Compression et préparation de la photo prise avec l'iPhone
+    function handlePhotoUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 700;
+          const scale = MAX_WIDTH / img.width;
+          canvas.width = MAX_WIDTH;
+          canvas.height = img.height * scale;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          
+          currentPhotoBase64 = canvas.toDataURL('image/jpeg', 0.7);
+          document.getElementById('photoPreview').src = currentPhotoBase64;
+          document.getElementById('photoPreviewContainer').classList.remove('hidden');
+          document.getElementById('photoPrompt').classList.add('hidden');
+          document.getElementById('analyzeBtn').classList.remove('hidden');
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Analyse de la photo via l'API Gemini Vision
+    async function analyzePhotoWithAI() {
+      const apiKey = localStorage.getItem('nutri_api_key');
+      if (!apiKey) {
+        alert("Veuillez d'abord entrer votre clé API Gemini dans l'onglet 'Objectifs & API'.");
+        switchTab('settings');
+        return;
+      }
+      if (!currentPhotoBase64) return;
+
+      const btn = document.getElementById('analyzeBtn');
+      const context = document.getElementById('mealContext').value;
+      btn.disabled = true;
+      btn.innerHTML = `<span>⏳ Analyse nutritionnelle en cours...</span>`;
+
+      try {
+        const base64Data = currentPhotoBase64.split(',')[1];
+        const prompt = `Tu es un nutritionniste expert. Analyse cette photo de repas. ${context ? 'Contexte fourni par l’utilisateur : ' + context : ''}. Estime le poids de chaque aliment visible et calcule les valeurs nutritives totales. Réponds UNIQUEMENT avec un objet JSON valide au format exact : {"name": "Nom court du plat en français", "calories": nombre_entier, "protein": nombre_entier, "carbs": nombre_entier, "fat": nombre_entier, "details": "Liste courte des aliments avec poids estimés en grammes"}`;
+
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{
+              parts: [
+                { text: prompt },
+                { inline_data: { mime_type: "image/jpeg", data: base64Data } }
+              ]
+            }],
+            generationConfig: { response_mime_type: "application/json" }
+          })
+        });
+
+        const data = await response.json();
+        const resultText = data.candidates[0].content.parts[0].text;
+        const nutrition = JSON.parse(resultText);
+
+        document.getElementById('mealName').value = nutrition.name || 'Repas analysé';
+        document.getElementById('mealCal').value = Math.round(nutrition.calories || 0);
+        document.getElementById('mealPro').value = Math.round(nutrition.protein || 0);
+        document.getElementById('mealCarb').value = Math.round(nutrition.carbs || 0);
+        document.getElementById('mealFat').value = Math.round(nutrition.fat || 0);
+        document.getElementById('mealDetails').value = nutrition.details || '';
+
+      } catch (err) {
+        alert("Erreur lors de l'analyse de l'image. Vérifiez votre clé API ou réessayez.");
+        console.error(err);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<span>✨ Analyser la photo avec l'IA</span>`;
+      }
+    }
+
+    // Sauvegarde d'un repas
+    function saveMeal() {
+      const name = document.getElementById('mealName').value.trim() || 'Repas';
+      const cal = parseInt(document.getElementById('mealCal').value) || 0;
+      const pro = parseInt(document.getElementById('mealPro').value) || 0;
+      const carb = parseInt(document.getElementById('mealCarb').value) || 0;
+      const fat = parseInt(document.getElementById('mealFat').value) || 0;
+      const details = document.getElementById('mealDetails').value.trim();
+
+      if (cal === 0 && pro === 0 && carb === 0 && fat === 0) {
+        alert("Veuillez analyser une photo ou saisir les macronutriments.");
+        return;
+      }
+
+      const allMeals = JSON.parse(localStorage.getItem('nutri_meals')) || {};
+      if (!allMeals[currentDate]) allMeals[currentDate] = [];
+
+      allMeals[currentDate].unshift({
+        id: Date.now(),
+        time: new Date().toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit' }),
+        name, cal, pro, carb, fat, details,
+        photo: currentPhotoBase64
+      });
+
+      localStorage.setItem('nutri_meals', JSON.stringify(allMeals));
+
+      // Réinitialiser le formulaire
+      document.getElementById('mealName').value = '';
+      document.getElementById('mealCal').value = '';
+      document.getElementById('mealPro').value = '';
+      document.getElementById('mealCarb').value = '';
+      document.getElementById('mealFat').value = '';
+      document.getElementById('mealDetails').value = '';
+      document.getElementById('mealContext').value = '';
+      currentPhotoBase64 = null;
+      document.getElementById('photoPreviewContainer').classList.add('hidden');
+      document.getElementById('photoPrompt').classList.remove('hidden');
+      document.getElementById('analyzeBtn').classList.add('hidden');
+
+      renderDay();
+    }
+
+    function deleteMeal(id) {
+      const allMeals = JSON.parse(localStorage.getItem('nutri_meals')) || {};
+      if (!allMeals[currentDate]) return;
+      allMeals[currentDate] = allMeals[currentDate].filter(m => m.id !== id);
+      localStorage.setItem('nutri_meals', JSON.stringify(allMeals));
+      renderDay();
+    }
+
+    // Affichage du bilan et des barres de progression
+    function renderDay() {
+      const allMeals = JSON.parse(localStorage.getItem('nutri_meals')) || {};
+      const dayMeals = allMeals[currentDate] || [];
+
+      let totCal = 0, totPro = 0, totCarb = 0, totFat = 0;
+      const listEl = document.getElementById('mealsList');
+      listEl.innerHTML = '';
+
+      if (dayMeals.length === 0) {
+        listEl.innerHTML = `<div class="text-center py-8 text-sm text-slate-500 bg-slate-900/40 rounded-2xl border border-slate-800/50">Aucun repas enregistré pour cette date.</div>`;
+      }
+
+      dayMeals.forEach(m => {
+        totCal += m.cal; totPro += m.pro; totCarb += m.carb; totFat += m.fat;
+
+        const card = document.createElement('div');
+        card.className = "bg-slate-900 border border-slate-800 rounded-2xl p-4 flex gap-3.5 items-start shadow";
+        card.innerHTML = `
+          ${m.photo ? `<img src="${m.photo}" class="w-20 h-20 rounded-xl object-cover flex-shrink-0 border border-slate-700" />` : `<div class="w-20 h-20 rounded-xl bg-slate-800 flex items-center justify-center text-2xl flex-shrink-0">🍽️</div>`}
+          <div class="flex-1 min-w-0">
+            <div class="flex justify-between items-start">
+              <div>
+                <span class="text-[11px] text-slate-400">${m.time}</span>
+                <h3 class="font-bold text-white text-sm truncate">${m.name}</h3>
+              </div>
+              <button onclick="deleteMeal(${m.id})" class="text-slate-500 hover:text-rose-400 text-xs px-1">✕</button>
+            </div>
+            ${m.details ? `<p class="text-xs text-slate-400 mt-1 line-clamp-2">${m.details}</p>` : ''}
+            <div class="flex flex-wrap gap-2 mt-2.5 text-xs font-semibold">
+              <span class="bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-md">${m.cal} kcal</span>
+              <span class="bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded-md">P: ${m.pro}g</span>
+              <span class="bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-md">G: ${m.carb}g</span>
+              <span class="bg-rose-500/10 text-rose-400 px-2 py-0.5 rounded-md">L: ${m.fat}g</span>
+            </div>
+          </div>
+        `;
+        listEl.appendChild(card);
+      });
+
+      // Mise à jour des compteurs et objectifs
+      document.getElementById('tot-cal').textContent = totCal;
+      document.getElementById('goal-cal').textContent = goals.cal;
+      document.getElementById('tot-pro').textContent = totPro;
+      document.getElementById('goal-pro').textContent = goals.pro;
+      document.getElementById('tot-carb').textContent = totCarb;
+      document.getElementById('goal-carb').textContent = goals.carb;
+      document.getElementById('tot-fat').textContent = totFat;
+      document.getElementById('goal-fat').textContent = goals.fat;
+
+      const rem = goals.cal - totCal;
+      const remEl = document.getElementById('rem-cal');
+      if (rem >= 0) {
+        remEl.textContent = `Reste : ${rem} kcal`;
+        remEl.className = "text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400";
+      } else {
+        remEl.textContent = `Dépassement : +${Math.abs(rem)} kcal`;
+        remEl.className = "text-xs font-semibold px-2.5 py-1 rounded-full bg-rose-500/10 text-rose-400";
+      }
+
+      document.getElementById('bar-cal').style.width = `${Math.min(100, (totCal / goals.cal) * 100)}%`;
+      document.getElementById('bar-pro').style.width = `${Math.min(100, (totPro / goals.pro) * 100)}%`;
+      document.getElementById('bar-carb').style.width = `${Math.min(100, (totCarb / goals.carb) * 100)}%`;
+      document.getElementById('bar-fat').style.width = `${Math.min(100, (totFat / goals.fat) * 100)}%`;
+    }
+
+    // Gestion des objectifs
+    function initSettingsSliders() {
+      document.getElementById('rng-cal').value = goals.cal;
+      document.getElementById('rng-pro').value = goals.pro;
+      document.getElementById('rng-carb').value = goals.carb;
+      document.getElementById('rng-fat').value = goals.fat;
+      updateGoalPreview();
+    }
+
+    function updateGoalPreview() {
+      document.getElementById('lbl-goal-cal').textContent = document.getElementById('rng-cal').value;
+      document.getElementById('lbl-goal-pro').textContent = document.getElementById('rng-pro').value;
+      document.getElementById('lbl-goal-carb').textContent = document.getElementById('rng-carb').value;
+      document.getElementById('lbl-goal-fat').textContent = document.getElementById('rng-fat').value;
+    }
+
+    function saveSettings() {
+      goals = {
+        cal: parseInt(document.getElementById('rng-cal').value),
+        pro: parseInt(document.getElementById('rng-pro').value),
+        carb: parseInt(document.getElementById('rng-carb').value),
+        fat: parseInt(document.getElementById('rng-fat').value)
+      };
+      localStorage.setItem('nutri_goals', JSON.stringify(goals));
+      
+      const key = document.getElementById('apiKeyInput').value.trim();
+      if (key) localStorage.setItem('nutri_api_key', key);
+
+      renderDay();
+      switchTab('dashboard');
+    }
+  </script>
+</body>
+</html>
