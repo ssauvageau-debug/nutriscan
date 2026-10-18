@@ -3,255 +3,325 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  
-  <!-- Configuration spécifique iPhone Web App (PWA) -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="NutriScan">
-  <link rel="apple-touch-icon" href="[https://cdn-icons-png.flaticon.com/512/2921/2921822.png](https://cdn-icons-png.flaticon.com/512/2921/2921822.png)">
-  
-  <title>NutriScan - Suivi Macros & Photos</title>
-  <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2921/2921822.png">
+  <title>NutriScan v3</title>
   <style>
+    :root {
+      --bg: #090d16;
+      --card: #111827;
+      --border: #1f2937;
+      --text: #f3f4f6;
+      --muted: #9ca3af;
+      --green: #10b981;
+      --blue: #3b82f6;
+      --amber: #f59e0b;
+      --rose: #f43f5e;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     body {
-      -webkit-tap-highlight-color: transparent;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      padding-bottom: env(safe-area-inset-bottom);
+      margin: 0;
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      padding-bottom: 95px;
     }
-    .safe-top {
-      padding-top: max(1rem, env(safe-area-inset-top));
+    header {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: max(14px, env(safe-area-inset-top)) 16px 12px;
+      position: sticky;
+      top: 0;
+      z-index: 20;
     }
+    .header-inner {
+      max-width: 460px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .brand { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 18px; }
+    .badge { background: rgba(16,185,129,0.2); color: var(--green); font-size: 11px; padding: 2px 7px; border-radius: 6px; }
+    .date-nav { display: flex; align-items: center; background: #1f2937; border-radius: 8px; padding: 2px 4px; }
+    .date-nav button { background: none; border: none; color: var(--text); font-size: 14px; padding: 6px 8px; cursor: pointer; }
+    .date-nav input { background: transparent; border: none; color: var(--text); font-size: 13px; font-weight: 600; text-align: center; width: 115px; }
+    main { max-width: 460px; margin: 0 auto; padding: 16px; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .card-title { font-size: 15px; font-weight: 700; margin: 0; color: #e5e7eb; }
+    .link-btn { background: none; border: none; color: var(--green); font-size: 12px; font-weight: 600; cursor: pointer; padding: 0; }
+    .cal-box { background: #0b0f19; border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-bottom: 12px; }
+    .cal-top { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px; }
+    .cal-num { font-size: 28px; font-weight: 800; }
+    .cal-goal { font-size: 13px; color: var(--muted); font-weight: 400; }
+    .pill { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 99px; background: rgba(16,185,129,0.15); color: var(--green); }
+    .pill.over { background: rgba(244,63,94,0.15); color: var(--rose); }
+    .bar-bg { width: 100%; height: 10px; background: #1f2937; border-radius: 99px; overflow: hidden; }
+    .bar-fill { height: 100%; width: 0%; transition: width 0.3s ease; }
+    .macro-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .macro-item { background: #0b0f19; border: 1px solid var(--border); border-radius: 12px; padding: 10px; }
+    .macro-label { font-size: 11px; font-weight: 700; margin-bottom: 4px; }
+    .macro-val { font-size: 16px; font-weight: 800; margin-bottom: 6px; }
+    .upload-zone {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 145px;
+      border: 2px dashed rgba(16,185,129,0.5);
+      border-radius: 14px;
+      background: #0b0f19;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      text-align: center;
+      margin-bottom: 12px;
+    }
+    .upload-zone img { width: 100%; height: 100%; object-fit: cover; opacity: 0.85; }
+    .upload-overlay {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      background: rgba(0,0,0,0.45);
+    }
+    .input, textarea {
+      width: 100%;
+      background: #0b0f19;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      color: var(--text);
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+    .input-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 10px; }
+    .input-grid label { display: block; font-size: 11px; margin-bottom: 4px; color: var(--muted); }
+    .btn {
+      width: 100%;
+      border: none;
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      cursor: pointer;
+      margin-bottom: 8px;
+    }
+    .btn-green { background: var(--green); }
+    .btn-blue { background: var(--blue); }
+    .btn-dark { background: #1f2937; border: 1px solid #374151; }
+    .status-box { font-size: 12px; padding: 12px; border-radius: 12px; margin-bottom: 10px; line-height: 1.45; }
+    .status-ok { background: rgba(16,185,129,0.15); border: 1px solid var(--green); color: #a7f3d0; }
+    .status-err { background: rgba(244,63,94,0.15); border: 1px solid var(--rose); color: #fecdd3; }
+    .meal-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+      padding: 12px; display: flex; gap: 12px; align-items: flex-start; margin-bottom: 10px;
+    }
+    .meal-thumb { width: 72px; height: 72px; border-radius: 12px; object-fit: cover; background: #1f2937; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+    .meal-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; font-size: 11px; font-weight: 700; }
+    .tag { padding: 3px 7px; border-radius: 6px; background: #1f2937; }
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: rgba(17,24,39,0.96); border-top: 1px solid var(--border);
+      display: flex; justify-content: space-around;
+      padding: 8px 0 max(8px, env(safe-area-inset-bottom)); z-index: 30;
+    }
+    .nav-btn { background: none; border: none; color: var(--muted); display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 11px; font-weight: 600; cursor: pointer; }
+    .nav-btn.active { color: var(--green); }
+    .hidden { display: none !important; }
+    input[type="range"] { width: 100%; accent-color: var(--green); margin: 6px 0 14px; }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen pb-24">
+<body>
 
-  <!-- En-tête avec sélecteur de date -->
-  <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-20 px-4 pb-3 safe-top">
-    <div class="flex items-center justify-between max-w-md mx-auto">
-      <div class="flex items-center space-x-2">
-        <span class="text-2xl">🥗</span>
-        <h1 class="text-lg font-bold tracking-tight text-white">NutriScan <span class="text-[10px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded ml-1">v2</span></h1>
+  <header>
+    <div class="header-inner">
+      <div class="brand">
+        <span>🥗 NutriScan</span>
+        <span class="badge">v3</span>
       </div>
-      <div class="flex items-center space-x-1 bg-slate-800 rounded-lg p-1 border border-slate-700">
-        <button onclick="changeDate(-1)" class="px-2 py-1 text-slate-300 active:scale-95">◀</button>
-        <input type="date" id="datePicker" onchange="onDateChange(this.value)" class="bg-transparent text-sm font-medium text-center text-white focus:outline-none">
-        <button onclick="changeDate(1)" class="px-2 py-1 text-slate-300 active:scale-95">▶</button>
+      <div class="date-nav">
+        <button onclick="changeDate(-1)">◀</button>
+        <input type="date" id="datePicker" onchange="onDateChange(this.value)">
+        <button onclick="changeDate(1)">▶</button>
       </div>
     </div>
   </header>
 
-  <!-- Conteneur Principal -->
-  <main class="max-w-md mx-auto p-4 space-y-6">
-
-    <!-- VUE 1 : TABLEAU DE BORD & REPAS -->
-    <div id="view-dashboard" class="space-y-6">
-      
-      <!-- Carte Bilan Journalier vs Objectifs -->
-      <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4">
-        <div class="flex justify-between items-baseline">
-          <h2 class="text-base font-semibold text-slate-300">Bilan du jour</h2>
-          <button onclick="switchTab('settings')" class="text-xs text-emerald-400 font-medium hover:underline">Ajuster les objectifs ⚙️</button>
+  <main>
+    <!-- VUE 1 : JOURNAL & PHOTO -->
+    <div id="view-dashboard">
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">Bilan du jour</h2>
+          <button class="link-btn" onclick="switchTab('settings')">Ajuster les objectifs ⚙️</button>
         </div>
 
-        <!-- Calories principales -->
-        <div class="bg-slate-950/60 rounded-xl p-4 border border-slate-800/80">
-          <div class="flex justify-between items-end mb-2">
+        <div class="cal-box">
+          <div class="cal-top">
             <div>
-              <span class="text-xs uppercase tracking-wider text-slate-400">Calories</span>
-              <div class="text-3xl font-extrabold text-white"><span id="tot-cal">0</span> <span class="text-sm font-normal text-slate-400">/ <span id="goal-cal">2200</span> kcal</span></div>
+              <div style="font-size:11px; color:var(--muted); text-transform:uppercase;">Calories</div>
+              <div class="cal-num"><span id="tot-cal">0</span> <span class="cal-goal">/ <span id="goal-cal">2200</span> kcal</span></div>
             </div>
-            <span id="rem-cal" class="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400">Reste : 2200 kcal</span>
+            <span id="rem-cal" class="pill">Reste : 2200 kcal</span>
           </div>
-          <div class="w-full bg-slate-800 h-3 rounded-full overflow-hidden">
-            <div id="bar-cal" class="bg-emerald-500 h-full transition-all duration-300" style="width: 0%"></div>
-          </div>
+          <div class="bar-bg"><div id="bar-cal" class="bar-fill" style="background:var(--green);"></div></div>
         </div>
 
-        <!-- Barres des 3 Macronutriments -->
-        <div class="grid grid-cols-3 gap-3">
-          <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
-            <div class="text-xs text-blue-400 font-semibold mb-1">Protéines</div>
-            <div class="text-lg font-bold"><span id="tot-pro">0</span><span class="text-xs font-normal text-slate-400"> / <span id="goal-pro">150</span>g</span></div>
-            <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden mt-2">
-              <div id="bar-pro" class="bg-blue-500 h-full transition-all duration-300" style="width: 0%"></div>
-            </div>
+        <div class="macro-grid">
+          <div class="macro-item">
+            <div class="macro-label" style="color:var(--blue);">Protéines</div>
+            <div class="macro-val"><span id="tot-pro">0</span><span class="cal-goal"> / <span id="goal-pro">150</span>g</span></div>
+            <div class="bar-bg" style="height:6px;"><div id="bar-pro" class="bar-fill" style="background:var(--blue);"></div></div>
           </div>
-          <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
-            <div class="text-xs text-amber-400 font-semibold mb-1">Glucides</div>
-            <div class="text-lg font-bold"><span id="tot-carb">0</span><span class="text-xs font-normal text-slate-400"> / <span id="goal-carb">220</span>g</span></div>
-            <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden mt-2">
-              <div id="bar-carb" class="bg-amber-500 h-full transition-all duration-300" style="width: 0%"></div>
-            </div>
+          <div class="macro-item">
+            <div class="macro-label" style="color:var(--amber);">Glucides</div>
+            <div class="macro-val"><span id="tot-carb">0</span><span class="cal-goal"> / <span id="goal-carb">220</span>g</span></div>
+            <div class="bar-bg" style="height:6px;"><div id="bar-carb" class="bar-fill" style="background:var(--amber);"></div></div>
           </div>
-          <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
-            <div class="text-xs text-rose-400 font-semibold mb-1">Lipides</div>
-            <div class="text-lg font-bold"><span id="tot-fat">0</span><span class="text-xs font-normal text-slate-400"> / <span id="goal-fat">75</span>g</span></div>
-            <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden mt-2">
-              <div id="bar-fat" class="bg-rose-500 h-full transition-all duration-300" style="width: 0%"></div>
-            </div>
+          <div class="macro-item">
+            <div class="macro-label" style="color:var(--rose);">Lipides</div>
+            <div class="macro-val"><span id="tot-fat">0</span><span class="cal-goal"> / <span id="goal-fat">75</span>g</span></div>
+            <div class="bar-bg" style="height:6px;"><div id="bar-fat" class="bar-fill" style="background:var(--rose);"></div></div>
           </div>
         </div>
       </section>
 
-      <!-- Zone d'ajout de repas (Photo ou Manuel) -->
-      <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4">
-        <h2 class="text-base font-semibold text-slate-300">Ajouter un repas</h2>
+      <section class="card">
+        <h2 class="card-title" style="margin-bottom:12px;">Ajouter un repas</h2>
 
-        <!-- Bouton Caméra / Photo -->
-        <label for="photoInput" class="flex flex-col items-center justify-center w-full h-36 border-2 border-dashed border-emerald-500/50 rounded-xl cursor-pointer bg-slate-950/50 hover:bg-slate-950 transition active:scale-[0.99]">
-          <div id="photoPreviewContainer" class="hidden w-full h-full relative">
-            <img id="photoPreview" class="w-full h-full object-cover rounded-xl opacity-80" />
-            <div class="absolute inset-0 flex items-center justify-center bg-black/40 rounded-xl">
-              <span class="text-xs font-semibold bg-slate-900/90 px-3 py-1.5 rounded-full text-white">Changer la photo 📷</span>
+        <label for="photoInput" class="upload-zone">
+          <div id="photoPreviewContainer" class="hidden" style="width:100%; height:100%;">
+            <img id="photoPreview" alt="Aperçu" />
+            <div class="upload-overlay">
+              <span style="background:#111827; padding:6px 12px; border-radius:99px; font-size:12px; font-weight:700;">Changer la photo 📷</span>
             </div>
           </div>
-          <div id="photoPrompt" class="flex flex-col items-center justify-center pt-5 pb-6 text-center px-4">
-            <span class="text-3xl mb-2">📸</span>
-            <p class="text-sm font-semibold text-emerald-400">Prendre en photo mon assiette</p>
-            <p class="text-xs text-slate-400 mt-1">Analyse automatique des portions et macros</p>
+          <div id="photoPrompt">
+            <div style="font-size:28px; margin-bottom:6px;">📸</div>
+            <div style="font-size:14px; font-weight:700; color:var(--green);">Prendre en photo mon assiette</div>
+            <div style="font-size:12px; color:var(--muted); margin-top:4px;">Analyse automatique des portions et macros</div>
           </div>
           <input id="photoInput" type="file" accept="image/*" class="hidden" onchange="handlePhotoUpload(event)" />
         </label>
 
-        <!-- Précision optionnelle pour aider l'IA -->
-        <div class="space-y-2">
-          <input type="text" id="mealContext" placeholder="Précision facultative (ex: bœuf haché 150g, huile d'olive...)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
-          
-          <button id="analyzeBtn" onclick="analyzePhotoWithAI()" class="hidden w-full bg-emerald-600 hover:bg-emerald-500 active:scale-[0.99] text-white font-semibold py-3 rounded-xl shadow transition flex items-center justify-center space-x-2">
-            <span>✨ Analyser la photo avec l'IA</span>
-          </button>
-          <div id="statusBox" class="hidden text-xs p-3 rounded-xl border"></div>
-        </div>
+        <input type="text" id="mealContext" class="input" placeholder="Précision facultative (ex: bœuf haché 150g, sauce...)">
 
-        <!-- Formulaire d'édition / vérification avant enregistrement -->
-        <div id="mealForm" class="pt-3 border-t border-slate-800 space-y-3">
-          <div class="text-xs font-medium text-slate-400 uppercase tracking-wider">Détails du repas (éditable)</div>
-          <input type="text" id="mealName" placeholder="Nom du repas (ex: Saumon grillé et riz)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-white">
-          
-          <div class="grid grid-cols-4 gap-2">
-            <div>
-              <label class="text-[11px] text-slate-400">Calories</label>
-              <input type="number" id="mealCal" placeholder="kcal" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-2 text-sm text-white">
-            </div>
-            <div>
-              <label class="text-[11px] text-blue-400">Prot. (g)</label>
-              <input type="number" id="mealPro" placeholder="g" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-2 text-sm text-white">
-            </div>
-            <div>
-              <label class="text-[11px] text-amber-400">Gluc. (g)</label>
-              <input type="number" id="mealCarb" placeholder="g" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-2 text-sm text-white">
-            </div>
-            <div>
-              <label class="text-[11px] text-rose-400">Lip. (g)</label>
-              <input type="number" id="mealFat" placeholder="g" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-2 text-sm text-white">
-            </div>
-          </div>
-
-          <textarea id="mealDetails" rows="2" placeholder="Détail des aliments estimés..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-300"></textarea>
-
-          <button onclick="saveMeal()" class="w-full bg-blue-600 hover:bg-blue-500 active:scale-[0.99] text-white font-semibold py-2.5 rounded-xl shadow transition">
-            ➕ Ajouter au bilan du jour
-          </button>
-        </div>
-      </section>
-
-      <!-- Liste des repas de la journée -->
-      <section class="space-y-3">
-        <h2 class="text-base font-semibold text-slate-300 px-1">Repas enregistrés</h2>
-        <div id="mealsList" class="space-y-3"></div>
-      </section>
-    </div>
-
-    <!-- VUE 2 : OBJECTIFS AJUSTABLES & CONFIGURATION -->
-    <div id="view-settings" class="hidden space-y-6">
-      <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-5">
-        <h2 class="text-base font-semibold text-white">🎯 Objectifs quotidiens ajustables</h2>
-        
-        <div class="space-y-4">
-          <div>
-            <div class="flex justify-between text-sm mb-1">
-              <span class="text-slate-300">Objectif Calories</span>
-              <span class="font-bold text-emerald-400"><span id="lbl-goal-cal">2200</span> kcal</span>
-            </div>
-            <input type="range" id="rng-cal" min="1200" max="4000" step="50" oninput="updateGoalPreview()" class="w-full accent-emerald-500">
-          </div>
-
-          <div>
-            <div class="flex justify-between text-sm mb-1">
-              <span class="text-blue-400">Protéines</span>
-              <span class="font-bold text-blue-400"><span id="lbl-goal-pro">150</span> g</span>
-            </div>
-            <input type="range" id="rng-pro" min="40" max="300" step="5" oninput="updateGoalPreview()" class="w-full accent-blue-500">
-          </div>
-
-          <div>
-            <div class="flex justify-between text-sm mb-1">
-              <span class="text-amber-400">Glucides</span>
-              <span class="font-bold text-amber-400"><span id="lbl-goal-carb">220</span> g</span>
-            </div>
-            <input type="range" id="rng-carb" min="20" max="500" step="5" oninput="updateGoalPreview()" class="w-full accent-amber-500">
-          </div>
-
-          <div>
-            <div class="flex justify-between text-sm mb-1">
-              <span class="text-rose-400">Lipides</span>
-              <span class="font-bold text-rose-400"><span id="lbl-goal-fat">75</span> g</span>
-            </div>
-            <input type="range" id="rng-fat" min="20" max="200" step="5" oninput="updateGoalPreview()" class="w-full accent-rose-500">
-          </div>
-        </div>
-
-        <button onclick="saveSettings()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 rounded-xl transition">
-          Enregistrer mes objectifs
+        <button id="analyzeBtn" onclick="analyzePhotoWithAI()" class="btn btn-green hidden">
+          ✨ Analyser la photo avec l'IA
         </button>
+
+        <div id="statusBox" class="status-box hidden"></div>
+
+        <div style="border-top:1px solid var(--border); padding-top:12px; margin-top:8px;">
+          <div style="font-size:11px; color:var(--muted); text-transform:uppercase; margin-bottom:8px; font-weight:700;">Détails du repas (éditable)</div>
+          <input type="text" id="mealName" class="input" placeholder="Nom du repas (ex: Saumon grillé et riz)">
+
+          <div class="input-grid">
+            <div>
+              <label>Calories</label>
+              <input type="number" id="mealCal" class="input" placeholder="kcal" style="margin:0;">
+            </div>
+            <div>
+              <label style="color:var(--blue);">Prot. (g)</label>
+              <input type="number" id="mealPro" class="input" placeholder="g" style="margin:0;">
+            </div>
+            <div>
+              <label style="color:var(--amber);">Gluc. (g)</label>
+              <input type="number" id="mealCarb" class="input" placeholder="g" style="margin:0;">
+            </div>
+            <div>
+              <label style="color:var(--rose);">Lip. (g)</label>
+              <input type="number" id="mealFat" class="input" placeholder="g" style="margin:0;">
+            </div>
+          </div>
+
+          <textarea id="mealDetails" rows="2" placeholder="Détail des aliments estimés..."></textarea>
+
+          <button onclick="saveMeal()" class="btn btn-blue">➕ Ajouter au bilan du jour</button>
+        </div>
       </section>
 
-      <!-- Configuration Clé API Gemini pour l'analyse d'image -->
-      <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-3">
-        <h2 class="text-base font-semibold text-white">🔑 Clé API Gemini (Analyse Photo)</h2>
-        <p class="text-xs text-slate-400 leading-relaxed">
-          Collez votre clé API Google AI Studio (commençant par <b>AQ.</b> ou <b>AIza</b>). Elle reste stockée uniquement sur cet appareil.
-        </p>
-        <input type="text" id="apiKeyInput" placeholder="Collez votre clé AQ... ou AIza... ici" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white font-mono">
-        
-        <div class="grid grid-cols-2 gap-2 pt-1">
-          <button onclick="saveSettings()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold py-2.5 rounded-xl transition">
-            💾 Sauvegarder
-          </button>
-          <button onclick="testApiKey()" class="bg-slate-800 hover:bg-slate-700 text-white text-sm font-semibold py-2.5 rounded-xl border border-slate-700 transition">
-            🔍 Tester la clé
-          </button>
-        </div>
-        <div id="testResultBox" class="hidden text-xs p-3 rounded-xl border mt-2"></div>
+      <section>
+        <h2 class="card-title" style="margin: 0 0 10px 4px;">Repas enregistrés</h2>
+        <div id="mealsList"></div>
       </section>
     </div>
 
+    <!-- VUE 2 : OBJECTIFS & API -->
+    <div id="view-settings" class="hidden">
+      <section class="card">
+        <h2 class="card-title" style="margin-bottom:14px;">🎯 Objectifs quotidiens ajustables</h2>
+
+        <div style="display:flex; justify-content:space-between; font-size:13px;">
+          <span>Objectif Calories</span>
+          <strong style="color:var(--green);"><span id="lbl-goal-cal">2200</span> kcal</strong>
+        </div>
+        <input type="range" id="rng-cal" min="1200" max="4000" step="50" oninput="updateGoalPreview()">
+
+        <div style="display:flex; justify-content:space-between; font-size:13px;">
+          <span style="color:var(--blue);">Protéines</span>
+          <strong style="color:var(--blue);"><span id="lbl-goal-pro">150</span> g</strong>
+        </div>
+        <input type="range" id="rng-pro" min="40" max="300" step="5" oninput="updateGoalPreview()">
+
+        <div style="display:flex; justify-content:space-between; font-size:13px;">
+          <span style="color:var(--amber);">Glucides</span>
+          <strong style="color:var(--amber);"><span id="lbl-goal-carb">220</span> g</strong>
+        </div>
+        <input type="range" id="rng-carb" min="20" max="500" step="5" oninput="updateGoalPreview()">
+
+        <div style="display:flex; justify-content:space-between; font-size:13px;">
+          <span style="color:var(--rose);">Lipides</span>
+          <strong style="color:var(--rose);"><span id="lbl-goal-fat">75</span> g</strong>
+        </div>
+        <input type="range" id="rng-fat" min="20" max="200" step="5" oninput="updateGoalPreview()">
+
+        <button onclick="saveSettings()" class="btn btn-green">Enregistrer mes objectifs</button>
+      </section>
+
+      <section class="card">
+        <h2 class="card-title" style="margin-bottom:8px;">🔑 Clé API Gemini (Google AI Studio)</h2>
+        <p style="font-size:12px; color:var(--muted); line-height:1.4; margin-top:0;">
+          Important : Utilisez une clé gratuite créée sur <b>aistudio.google.com/apikey</b> (elle commence par <b>AIzaSy...</b>). Les clés commençant par <i>AQ.</i> ne sont pas acceptées sans serveur Google Cloud.
+        </p>
+        <input type="text" id="apiKeyInput" class="input" placeholder="AIzaSy...">
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+          <button onclick="saveSettings()" class="btn btn-green" style="margin:0;">💾 Sauvegarder</button>
+          <button onclick="testApiKey()" class="btn btn-dark" style="margin:0;">🔍 Tester la clé</button>
+        </div>
+        <div id="testResultBox" class="status-box hidden" style="margin-top:12px;"></div>
+      </section>
+    </div>
   </main>
 
-  <!-- Barre de navigation inférieure style iOS -->
-  <nav class="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur border-t border-slate-800 px-6 py-2 z-30">
-    <div class="max-w-md mx-auto flex justify-around items-center">
-      <button onclick="switchTab('dashboard')" id="tab-dashboard" class="flex flex-col items-center py-1 text-emerald-400">
-        <span class="text-xl">📊</span>
-        <span class="text-[11px] font-medium mt-0.5">Journal & Photo</span>
-      </button>
-      <button onclick="switchTab('settings')" id="tab-settings" class="flex flex-col items-center py-1 text-slate-400">
-        <span class="text-xl">🎯</span>
-        <span class="text-[11px] font-medium mt-0.5">Objectifs & API</span>
-      </button>
-    </div>
+  <nav class="bottom-nav">
+    <button onclick="switchTab('dashboard')" id="tab-dashboard" class="nav-btn active">
+      <span style="font-size:20px;">📊</span>
+      <span>Journal & Photo</span>
+    </button>
+    <button onclick="switchTab('settings')" id="tab-settings" class="nav-btn">
+      <span style="font-size:20px;">🎯</span>
+      <span>Objectifs & API</span>
+    </button>
   </nav>
 
   <script>
     let currentDate = new Date().toISOString().split('T')[0];
     let currentPhotoBase64 = null;
 
-    // Liste des modèles Gemini actifs en octobre 2026 avec bascule automatique
     const GEMINI_MODELS = [
-      'gemini-3.8-flash',
-      'gemini-3.6-flash',
-      'gemini-3.1-flash-lite',
-      'gemini-2.5-flash'
+      'gemini-2.5-flash',
+      'gemini-2.5-pro',
+      'gemini-2.0-flash'
     ];
 
     let goals = JSON.parse(localStorage.getItem('nutri_goals')) || {
@@ -268,8 +338,8 @@
     function switchTab(tab) {
       document.getElementById('view-dashboard').classList.toggle('hidden', tab !== 'dashboard');
       document.getElementById('view-settings').classList.toggle('hidden', tab !== 'settings');
-      document.getElementById('tab-dashboard').className = `flex flex-col items-center py-1 ${tab === 'dashboard' ? 'text-emerald-400' : 'text-slate-400'}`;
-      document.getElementById('tab-settings').className = `flex flex-col items-center py-1 ${tab === 'settings' ? 'text-emerald-400' : 'text-slate-400'}`;
+      document.getElementById('tab-dashboard').className = 'nav-btn ' + (tab === 'dashboard' ? 'active' : '');
+      document.getElementById('tab-settings').className = 'nav-btn ' + (tab === 'settings' ? 'active' : '');
     }
 
     function changeDate(offset) {
@@ -281,48 +351,39 @@
     }
 
     function onDateChange(val) {
-      if (val) {
-        currentDate = val;
-        renderDay();
-      }
+      if (val) { currentDate = val; renderDay(); }
     }
 
     function showStatus(boxId, message, isError = false) {
       const box = document.getElementById(boxId);
       box.classList.remove('hidden');
-      box.className = `text-xs p-3 rounded-xl border ${isError ? 'bg-rose-950/60 border-rose-700 text-rose-200' : 'bg-emerald-950/60 border-emerald-700 text-emerald-200'}`;
+      box.className = 'status-box ' + (isError ? 'status-err' : 'status-ok');
       box.innerHTML = message;
     }
 
-    // Appel universel Gemini compatible clés AQ. et AIza + bascule multi-modèles
     async function callGeminiAPI(apiKey, payload) {
       const cleanKey = apiKey.replace(/\s+/g, '');
-      let lastError = "Erreur inconnue";
+      if (cleanKey.startsWith('AQ.')) {
+        throw new Error("Cette clé commence par 'AQ.' (clé Vertex AI Cloud). Créez plutôt une clé commençant par 'AIzaSy' sur aistudio.google.com/apikey.");
+      }
 
+      let lastError = "Erreur de connexion";
       for (const model of GEMINI_MODELS) {
         try {
-          const url = `[https://generativelanguage.googleapis.com/v1beta/models/$](https://generativelanguage.googleapis.com/v1beta/models/$){model}:generateContent?key=${encodeURIComponent(cleanKey)}`;
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(cleanKey)}`;
           const response = await fetch(url, {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-goog-api-key': cleanKey
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
           });
-
           const data = await response.json();
 
           if (response.ok && data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
             return { text: data.candidates[0].content.parts[0].text, modelUsed: model };
           }
-
           if (data.error) {
-            lastError = `[${model}] (${data.error.code || response.status}) : ${data.error.message}`;
-            // Si le modèle est retiré/introuvable (404), on essaie automatiquement le modèle suivant
-            if (response.status === 404 || (data.error.message && data.error.message.toLowerCase().includes('not found'))) {
-              continue;
-            }
+            lastError = `${data.error.message} (${model})`;
+            if (response.status === 404) continue;
           }
         } catch (err) {
           lastError = err.message;
@@ -331,23 +392,22 @@
       throw new Error(lastError);
     }
 
-    // Bouton de validation de la clé API
     async function testApiKey() {
       const key = document.getElementById('apiKeyInput').value.trim();
       if (!key) {
-        showStatus('testResultBox', "⚠️ Veuillez d'abord coller votre clé API dans le champ ci-dessus.", true);
+        showStatus('testResultBox', "⚠️ Veuillez coller votre clé API commençant par AIzaSy.", true);
         return;
       }
       localStorage.setItem('nutri_api_key', key);
-      showStatus('testResultBox', "⏳ Vérification de la clé auprès de Google AI Studio...", false);
+      showStatus('testResultBox', "⏳ Test de connexion en cours...", false);
 
       try {
         const res = await callGeminiAPI(key, {
-          contents: [{ parts: [{ text: "Réponds uniquement le mot OK" }] }]
+          contents: [{ parts: [{ text: "Réponds OK" }] }]
         });
-        showStatus('testResultBox', `✅ <b>Problème résolu !</b> Connexion réussie avec le modèle <b>${res.modelUsed}</b>. Votre clé est valide et prête à analyser vos photos.`, false);
+        showStatus('testResultBox', `✅ <b>Clé validée !</b> Connecté au modèle <b>${res.modelUsed}</b>. Vous pouvez maintenant analyser vos photos de repas.`, false);
       } catch (err) {
-        showStatus('testResultBox', `❌ <b>Échec du test :</b> ${err.message}<br><br>💡 <i>Astuce : Si l'erreur indique 401 ou API_KEY_INVALID, retournez dans Google AI Studio, supprimez l'ancienne clé et créez-en une nouvelle.</i>`, true);
+        showStatus('testResultBox', `❌ <b>Erreur :</b> ${err.message}`, true);
       }
     }
 
@@ -366,7 +426,7 @@
           canvas.height = Math.round(img.height * scale);
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          
+
           currentPhotoBase64 = canvas.toDataURL('image/jpeg', 0.72);
           document.getElementById('photoPreview').src = currentPhotoBase64;
           document.getElementById('photoPreviewContainer').classList.remove('hidden');
@@ -382,8 +442,8 @@
     async function analyzePhotoWithAI() {
       const apiKey = localStorage.getItem('nutri_api_key');
       if (!apiKey) {
-        alert("Veuillez d'abord entrer et sauvegarder votre clé API Gemini dans l'onglet 'Objectifs & API'.");
         switchTab('settings');
+        showStatus('testResultBox', "⚠️ Entrez votre clé API Gemini ici avant de lancer l'analyse.", true);
         return;
       }
       if (!currentPhotoBase64) return;
@@ -391,12 +451,12 @@
       const btn = document.getElementById('analyzeBtn');
       const context = document.getElementById('mealContext').value;
       btn.disabled = true;
-      btn.innerHTML = `<span>⏳ Analyse nutritionnelle en cours...</span>`;
+      btn.textContent = "⏳ Analyse nutritionnelle en cours...";
       document.getElementById('statusBox').classList.add('hidden');
 
       try {
         const base64Data = currentPhotoBase64.split(',')[1];
-        const prompt = `Tu es un nutritionniste expert. Analyse cette photo de repas. ${context ? 'Contexte fourni : ' + context : ''}. Estime le poids de chaque aliment visible et calcule les valeurs nutritives totales. Réponds UNIQUEMENT avec un objet JSON valide au format exact, sans texte autour : {"name": "Nom court du plat en français", "calories": 500, "protein": 30, "carbs": 50, "fat": 20, "details": "Détail des aliments avec poids estimés en grammes"}`;
+        const prompt = `Tu es un nutritionniste expert. Analyse cette photo de repas. ${context ? 'Contexte fourni : ' + context : ''}. Estime le poids de chaque aliment visible et calcule les valeurs nutritives totales. Réponds UNIQUEMENT avec un objet JSON valide au format exact : {"name": "Nom du plat", "calories": 500, "protein": 30, "carbs": 50, "fat": 20, "details": "Aliments et poids estimés en grammes"}`;
 
         const result = await callGeminiAPI(apiKey, {
           contents: [{
@@ -407,11 +467,8 @@
           }]
         });
 
-        // Extraction robuste du JSON même si le modèle ajoute des balises ```json
-        const rawText = result.text.trim();
-        const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) throw new Error("Format de réponse inattendu : " + rawText.slice(0, 100));
-        
+        const jsonMatch = result.text.trim().match(/\{[\s\S]*\}/);
+        if (!jsonMatch) throw new Error("Réponse invalide de l'IA.");
         const nutrition = JSON.parse(jsonMatch[0]);
 
         document.getElementById('mealName').value = nutrition.name || 'Repas analysé';
@@ -421,14 +478,12 @@
         document.getElementById('mealFat').value = Math.round(Number(nutrition.fat) || 0);
         document.getElementById('mealDetails').value = nutrition.details || '';
 
-        showStatus('statusBox', `✅ Analyse terminée avec succès (${result.modelUsed}). Vérifiez les valeurs ci-dessous puis appuyez sur <b>Ajouter au bilan du jour</b>.`, false);
-
+        showStatus('statusBox', `✅ Analyse réussie ! Vérifiez les chiffres ci-dessous puis touchez <b>Ajouter au bilan du jour</b>.`, false);
       } catch (err) {
-        showStatus('statusBox', `❌ <b>Détail de l'erreur :</b> ${err.message}<br><br>👉 Allez dans l'onglet <b>Objectifs & API</b> et touchez <b>Tester la clé</b> pour vérifier votre clé.`, true);
-        console.error(err);
+        showStatus('statusBox', `❌ <b>Erreur :</b> ${err.message}`, true);
       } finally {
         btn.disabled = false;
-        btn.innerHTML = `<span>✨ Analyser la photo avec l'IA</span>`;
+        btn.textContent = "✨ Analyser la photo avec l'IA";
       }
     }
 
@@ -441,7 +496,7 @@
       const details = document.getElementById('mealDetails').value.trim();
 
       if (cal === 0 && pro === 0 && carb === 0 && fat === 0) {
-        alert("Veuillez analyser une photo ou saisir les macronutriments.");
+        alert("Veuillez analyser une photo ou entrer les valeurs.");
         return;
       }
 
@@ -490,30 +545,29 @@
       listEl.innerHTML = '';
 
       if (dayMeals.length === 0) {
-        listEl.innerHTML = `<div class="text-center py-8 text-sm text-slate-500 bg-slate-900/40 rounded-2xl border border-slate-800/50">Aucun repas enregistré pour cette date.</div>`;
+        listEl.innerHTML = `<div class="card" style="text-align:center; color:var(--muted); font-size:13px;">Aucun repas enregistré pour cette date.</div>`;
       }
 
       dayMeals.forEach(m => {
         totCal += m.cal; totPro += m.pro; totCarb += m.carb; totFat += m.fat;
-
         const card = document.createElement('div');
-        card.className = "bg-slate-900 border border-slate-800 rounded-2xl p-4 flex gap-3.5 items-start shadow";
+        card.className = "meal-card";
         card.innerHTML = `
-          ${m.photo ? `<img src="${m.photo}" class="w-20 h-20 rounded-xl object-cover flex-shrink-0 border border-slate-700" />` : `<div class="w-20 h-20 rounded-xl bg-slate-800 flex items-center justify-center text-2xl flex-shrink-0">🍽️</div>`}
-          <div class="flex-1 min-w-0">
-            <div class="flex justify-between items-start">
+          ${m.photo ? `<img src="${m.photo}" class="meal-thumb" />` : `<div class="meal-thumb">🍽️</div>`}
+          <div style="flex:1; min-width:0;">
+            <div style="display:flex; justify-content:space-between;">
               <div>
-                <span class="text-[11px] text-slate-400">${m.time}</span>
-                <h3 class="font-bold text-white text-sm truncate">${m.name}</h3>
+                <div style="font-size:11px; color:var(--muted);">${m.time}</div>
+                <div style="font-weight:700; font-size:14px;">${m.name}</div>
               </div>
-              <button onclick="deleteMeal(${m.id})" class="text-slate-500 hover:text-rose-400 text-xs px-1">✕</button>
+              <button onclick="deleteMeal(${m.id})" style="background:none; border:none; color:var(--muted); font-size:14px;">✕</button>
             </div>
-            ${m.details ? `<p class="text-xs text-slate-400 mt-1 line-clamp-2">${m.details}</p>` : ''}
-            <div class="flex flex-wrap gap-2 mt-2.5 text-xs font-semibold">
-              <span class="bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-md">${m.cal} kcal</span>
-              <span class="bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded-md">P: ${m.pro}g</span>
-              <span class="bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-md">G: ${m.carb}g</span>
-              <span class="bg-rose-500/10 text-rose-400 px-2 py-0.5 rounded-md">L: ${m.fat}g</span>
+            ${m.details ? `<div style="font-size:12px; color:var(--muted); margin-top:4px;">${m.details}</div>` : ''}
+            <div class="meal-tags">
+              <span class="tag" style="color:var(--green);">${m.cal} kcal</span>
+              <span class="tag" style="color:var(--blue);">P: ${m.pro}g</span>
+              <span class="tag" style="color:var(--amber);">G: ${m.carb}g</span>
+              <span class="tag" style="color:var(--rose);">L: ${m.fat}g</span>
             </div>
           </div>
         `;
@@ -533,10 +587,10 @@
       const remEl = document.getElementById('rem-cal');
       if (rem >= 0) {
         remEl.textContent = `Reste : ${rem} kcal`;
-        remEl.className = "text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400";
+        remEl.className = "pill";
       } else {
         remEl.textContent = `Dépassement : +${Math.abs(rem)} kcal`;
-        remEl.className = "text-xs font-semibold px-2.5 py-1 rounded-full bg-rose-500/10 text-rose-400";
+        remEl.className = "pill over";
       }
 
       document.getElementById('bar-cal').style.width = `${Math.min(100, (totCal / goals.cal) * 100)}%`;
@@ -568,11 +622,9 @@
         fat: parseInt(document.getElementById('rng-fat').value)
       };
       localStorage.setItem('nutri_goals', JSON.stringify(goals));
-      
       const key = document.getElementById('apiKeyInput').value.trim();
       if (key) localStorage.setItem('nutri_api_key', key);
-
-      showStatus('testResultBox', "✅ Clé API et objectifs sauvegardés dans la mémoire de l'appareil.", false);
+      showStatus('testResultBox', "✅ Paramètres enregistrés.", false);
       renderDay();
     }
   </script>
