@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="NutriScan">
   <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2921/2921822.png">
-  <title>NutriScan v3</title>
+  <title>NutriScan v4</title>
   <style>
     :root {
       --bg: #090d16;
@@ -117,7 +117,7 @@
     .btn-green { background: var(--green); }
     .btn-blue { background: var(--blue); }
     .btn-dark { background: #1f2937; border: 1px solid #374151; }
-    .status-box { font-size: 12px; padding: 12px; border-radius: 12px; margin-bottom: 10px; line-height: 1.45; }
+    .status-box { font-size: 12px; padding: 12px; border-radius: 12px; margin-bottom: 10px; line-height: 1.45; word-break: break-word; }
     .status-ok { background: rgba(16,185,129,0.15); border: 1px solid var(--green); color: #a7f3d0; }
     .status-err { background: rgba(244,63,94,0.15); border: 1px solid var(--rose); color: #fecdd3; }
     .meal-card {
@@ -145,7 +145,7 @@
     <div class="header-inner">
       <div class="brand">
         <span>🥗 NutriScan</span>
-        <span class="badge">v3</span>
+        <span class="badge">v4</span>
       </div>
       <div class="date-nav">
         <button onclick="changeDate(-1)">◀</button>
@@ -288,11 +288,11 @@
       </section>
 
       <section class="card">
-        <h2 class="card-title" style="margin-bottom:8px;">🔑 Clé API Gemini (Google AI Studio)</h2>
+        <h2 class="card-title" style="margin-bottom:8px;">🔑 Clé API Gemini (AQ... ou AIza...)</h2>
         <p style="font-size:12px; color:var(--muted); line-height:1.4; margin-top:0;">
-          Important : Utilisez une clé gratuite créée sur <b>aistudio.google.com/apikey</b> (elle commence par <b>AIzaSy...</b>). Les clés commençant par <i>AQ.</i> ne sont pas acceptées sans serveur Google Cloud.
+          Collez votre clé Google AI Studio (commençant par <b>AQ.</b> ou <b>AIza</b>) et appuyez sur <b>Tester la clé</b>.
         </p>
-        <input type="text" id="apiKeyInput" class="input" placeholder="AIzaSy...">
+        <input type="text" id="apiKeyInput" class="input" placeholder="AQ.Ab8RN6...">
 
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
           <button onclick="saveSettings()" class="btn btn-green" style="margin:0;">💾 Sauvegarder</button>
@@ -317,12 +317,6 @@
   <script>
     let currentDate = new Date().toISOString().split('T')[0];
     let currentPhotoBase64 = null;
-
-    const GEMINI_MODELS = [
-      'gemini-2.5-flash',
-      'gemini-2.5-pro',
-      'gemini-2.0-flash'
-    ];
 
     let goals = JSON.parse(localStorage.getItem('nutri_goals')) || {
       cal: 2200, pro: 150, carb: 220, fat: 75
@@ -361,32 +355,80 @@
       box.innerHTML = message;
     }
 
+    // Détecte automatiquement les modèles disponibles pour cette clé (AQ. ou AIza)
+    async function fetchAvailableModels(cleanKey) {
+      const authModes = [
+        { url: `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(cleanKey)}`, headers: {} },
+        { url: `https://generativelanguage.googleapis.com/v1beta/models`, headers: { 'x-goog-api-key': cleanKey } },
+        { url: `https://generativelanguage.googleapis.com/v1beta/models`, headers: { 'Authorization': `Bearer ${cleanKey}` } }
+      ];
+
+      for (const mode of authModes) {
+        try {
+          const res = await fetch(mode.url, { headers: mode.headers });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.models) {
+              const names = data.models
+                .filter(m => m.supportedGenerationMethods && m.supportedGenerationMethods.includes('generateContent'))
+                .map(m => m.name.replace('models/', ''));
+              if (names.length > 0) return names;
+            }
+          }
+        } catch (e) {}
+      }
+      return ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+    }
+
     async function callGeminiAPI(apiKey, payload) {
       const cleanKey = apiKey.replace(/\s+/g, '');
-      if (cleanKey.startsWith('AQ.')) {
-        throw new Error("Cette clé commence par 'AQ.' (clé Vertex AI Cloud). Créez plutôt une clé commençant par 'AIzaSy' sur aistudio.google.com/apikey.");
-      }
+      const discoveredModels = await fetchAvailableModels(cleanKey);
 
-      let lastError = "Erreur de connexion";
-      for (const model of GEMINI_MODELS) {
-        try {
-          const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(cleanKey)}`;
-          const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-          const data = await response.json();
+      // On priorise les modèles flash multimodaux rapides
+      const preferredOrder = [
+        ...discoveredModels.filter(m => m.includes('flash') && !m.includes('8b')),
+        ...discoveredModels.filter(m => m.includes('pro')),
+        ...discoveredModels
+      ];
+      const uniqueModels = [...new Set(preferredOrder)].slice(0, 5);
 
-          if (response.ok && data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
-            return { text: data.candidates[0].content.parts[0].text, modelUsed: model };
+      let lastError = "Impossible de joindre l'API Gemini.";
+
+      for (const model of uniqueModels) {
+        const attempts = [
+          {
+            url: `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(cleanKey)}`,
+            headers: { 'Content-Type': 'application/json' }
+          },
+          {
+            url: `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+            headers: { 'Content-Type': 'application/json', 'x-goog-api-key': cleanKey }
+          },
+          {
+            url: `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${cleanKey}` }
           }
-          if (data.error) {
-            lastError = `${data.error.message} (${model})`;
-            if (response.status === 404) continue;
+        ];
+
+        for (const attempt of attempts) {
+          try {
+            const response = await fetch(attempt.url, {
+              method: 'POST',
+              headers: attempt.headers,
+              body: JSON.stringify(payload)
+            });
+            const data = await response.json();
+
+            if (response.ok && data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
+              return { text: data.candidates[0].content.parts[0].text, modelUsed: model };
+            }
+            if (data.error) {
+              lastError = `[${model}] Code ${data.error.code || response.status} : ${data.error.message}`;
+              if (response.status === 404) break; // passe au modèle suivant
+            }
+          } catch (err) {
+            lastError = err.message;
           }
-        } catch (err) {
-          lastError = err.message;
         }
       }
       throw new Error(lastError);
@@ -395,19 +437,19 @@
     async function testApiKey() {
       const key = document.getElementById('apiKeyInput').value.trim();
       if (!key) {
-        showStatus('testResultBox', "⚠️ Veuillez coller votre clé API commençant par AIzaSy.", true);
+        showStatus('testResultBox', "⚠️ Veuillez coller votre clé API dans la case ci-dessus.", true);
         return;
       }
       localStorage.setItem('nutri_api_key', key);
-      showStatus('testResultBox', "⏳ Test de connexion en cours...", false);
+      showStatus('testResultBox', "⏳ Test de votre clé AQ... en cours...", false);
 
       try {
         const res = await callGeminiAPI(key, {
-          contents: [{ parts: [{ text: "Réponds OK" }] }]
+          contents: [{ parts: [{ text: "Réponds uniquement OK" }] }]
         });
-        showStatus('testResultBox', `✅ <b>Clé validée !</b> Connecté au modèle <b>${res.modelUsed}</b>. Vous pouvez maintenant analyser vos photos de repas.`, false);
+        showStatus('testResultBox', `✅ <b>Succès !</b> Votre clé fonctionne parfaitement avec le modèle <b>${res.modelUsed}</b>. Vous pouvez maintenant analyser vos photos de repas !`, false);
       } catch (err) {
-        showStatus('testResultBox', `❌ <b>Erreur :</b> ${err.message}`, true);
+        showStatus('testResultBox', `❌ <b>Message exact du serveur :</b><br>${err.message}`, true);
       }
     }
 
@@ -443,7 +485,7 @@
       const apiKey = localStorage.getItem('nutri_api_key');
       if (!apiKey) {
         switchTab('settings');
-        showStatus('testResultBox', "⚠️ Entrez votre clé API Gemini ici avant de lancer l'analyse.", true);
+        showStatus('testResultBox', "⚠️ Collez votre clé API ici et appuyez sur Sauvegarder.", true);
         return;
       }
       if (!currentPhotoBase64) return;
@@ -468,7 +510,7 @@
         });
 
         const jsonMatch = result.text.trim().match(/\{[\s\S]*\}/);
-        if (!jsonMatch) throw new Error("Réponse invalide de l'IA.");
+        if (!jsonMatch) throw new Error("Réponse inattendue : " + result.text.slice(0, 80));
         const nutrition = JSON.parse(jsonMatch[0]);
 
         document.getElementById('mealName').value = nutrition.name || 'Repas analysé';
@@ -478,7 +520,7 @@
         document.getElementById('mealFat').value = Math.round(Number(nutrition.fat) || 0);
         document.getElementById('mealDetails').value = nutrition.details || '';
 
-        showStatus('statusBox', `✅ Analyse réussie ! Vérifiez les chiffres ci-dessous puis touchez <b>Ajouter au bilan du jour</b>.`, false);
+        showStatus('statusBox', `✅ Analyse réussie (${result.modelUsed}) ! Vérifiez les chiffres puis appuyez sur <b>Ajouter au bilan du jour</b>.`, false);
       } catch (err) {
         showStatus('statusBox', `❌ <b>Erreur :</b> ${err.message}`, true);
       } finally {
@@ -624,7 +666,7 @@
       localStorage.setItem('nutri_goals', JSON.stringify(goals));
       const key = document.getElementById('apiKeyInput').value.trim();
       if (key) localStorage.setItem('nutri_api_key', key);
-      showStatus('testResultBox', "✅ Paramètres enregistrés.", false);
+      showStatus('testResultBox', "✅ Clé AQ... et objectifs enregistrés.", false);
       renderDay();
     }
   </script>
